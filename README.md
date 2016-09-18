@@ -1,0 +1,2 @@
+# DailyRewards
+Get rewards DAILY
