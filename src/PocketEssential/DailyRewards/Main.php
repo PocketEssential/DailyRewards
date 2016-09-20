@@ -33,6 +33,7 @@ use pocketmine\event\Listener;
 use pocketmine\utils\TextFormat;
 use pocketmine\utils\Config;
 use pocketmine\item\Item;
+use pocketmine\command\ConsoleCommandSender;
 
 class Main extends PluginBase implements  Listener
 {
@@ -71,7 +72,10 @@ class Main extends PluginBase implements  Listener
     public function giveReward($sender, $claimed, $already_claimed){
         if($this->time >= $this->cooldown && $sender instanceof Player){
             $sender->sendMessage($claimed);
-
+            $name = $sender->getName();
+            $RewardCommand = $this->getConfig()->get("RewardCommand");
+            $Rewards = str_replace( "{player}", "$name", $RewardCommand );
+            $this->getServer()->dispatchCommand(new ConsoleCommandSender(), "$Rewards");
         }
         elseif($this->time < $this->cooldown && $sender instanceof Player){
             $sender->sendMessage($already_claimed);
