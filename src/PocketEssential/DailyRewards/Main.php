@@ -49,7 +49,7 @@ class Main extends PluginBase implements  Listener
 
     public function onDisable()
     {
-        $this->getLogger()->info(TextFormat::DARK_BLUE . "DailyRewards has turned off, Did the server stopped?");
+        $this->getLogger()->info(TextFormat::DARK_BLUE . "DailyRewards has turned off, Did the server stop?");
     }
 
     public function onCommand(CommandSender $sender, Command $command, $label, array $args)
