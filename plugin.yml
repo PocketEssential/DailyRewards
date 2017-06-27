@@ -9,3 +9,4 @@ commands:
     dailyrewards:
         description: rewards daily
         usage: /dailyrewards
+        aliases: ["daily", "rewards"]

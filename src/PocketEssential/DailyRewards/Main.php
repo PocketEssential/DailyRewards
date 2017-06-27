@@ -34,17 +34,23 @@ use pocketmine\utils\TextFormat;
 use pocketmine\utils\Config;
 use pocketmine\item\Item;
 use pocketmine\command\ConsoleCommandSender;
+use pocketmine\event\player\PlayerJoinEvent;
 
 class Main extends PluginBase implements  Listener
 {
-    public $time = 240000;
-    public $cooldown = "86400";
+    public $cooldown = 86400;
+    public $claimed;
+    public $already_claimed;
 
     public function onEnable()
     {
-
-        $this->getLogger()->info(TextFormat::DARK_BLUE . "DailyRewards" . TextFormat::DARK_PURPLE . "Has been enabled!");
-        $config = new Config($this->getDataFolder() . "Config.yml", Config::YAML);
+		$this->saveDefaultConfig();
+		if(!is_dir($this->getDataFolder()."players")) mkdir($this->getDataFolder() . "players");
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
+        $this->claimed = $this->getConfig()->get("Claimed");
+        $this->already_claimed = $this->getConfig()->get("Already_Claimed");
+		$this->getLogger()->info(TextFormat::DARK_BLUE . "DailyRewards by PocketEssential " . TextFormat::DARK_PURPLE . "has been enabled!");
+		
     }
 
     public function onDisable()
@@ -54,31 +60,53 @@ class Main extends PluginBase implements  Listener
 
     public function onCommand(CommandSender $sender, Command $command, $label, array $args)
     {
-        $cmd = strtolower($command->getName());
-        if ($cmd === "dailyrewards" or "daily" or "rewards") {
-
-            /*
-             Ignore those, just some varibles
-            */
-            $checking = $this->getConfig()->get("Checking");
-            $claimed = $this->getConfig()->get("Claimed");
-            $already_claimed = $this->getConfig()->get("Already_Claimed");
-
-            $sender->sendMessage($checking);
-            $this->giveReward($sender, $claimed, $already_claimed);
-            return true;
-        }
+		if($sender instanceof Player){
+			$cmd = strtolower($command->getName());
+			if ($cmd === "dailyrewards") {
+				$this->giveReward($sender);
+				return true;
+			}
+		} else {
+			$sender->sendMessage(TextFormat::RED . "Run this command in game!");
+		}
     }
-    public function giveReward($sender, $claimed, $already_claimed){
-        if($this->time >= $this->cooldown && $sender instanceof Player){
-            $sender->sendMessage($claimed);
-            $name = $sender->getName();
-            $RewardCommand = $this->getConfig()->get("RewardCommand");
-            $Rewards = str_replace( "{player}", "$name", $RewardCommand );
-            $this->getServer()->dispatchCommand(new ConsoleCommandSender(), "$Rewards");
-        }
-        elseif($this->time < $this->cooldown && $sender instanceof Player){
-            $sender->sendMessage($already_claimed);
-        }
+	
+	public function onJoin(PlayerJoinEvent $ev){
+		$name = $ev->getPlayer()->getName();
+		if($this->isFirstJoin($name)){
+			$this->registerConfig($name);
+		}
+	}
+	
+	public function getPlayerConfig($player){
+		return (new Config($this->getDataFolder() . "players/". strtolower($player) .".json", Config::JSON));
+	}
+	
+	public function registerConfig($player){
+		$config = new Config($this->getDataFolder() . "players/".$player.".json", Config::JSON, [
+		"time" => time()
+		]);
+		$config->save();
+	}
+	
+	public function isFirstJoin($player){
+		return !file_exists($this->getDataFolder() . "players/".$player.".json");
+	}
+	
+    public function giveReward($sender){
+		if($sender instanceof Player){
+			$cfg = $this->getPlayerConfig($sender->getName());
+			if((time() - $cfg->get("time")) >= 86400){
+				$sender->sendMessage($this->claimed);
+				$name = $sender->getName();
+				$RewardCommand = $this->getConfig()->get("RewardCommand");
+				$Rewards = str_replace( "{player}", "$name", $RewardCommand);
+				$time = (time() + $this->cooldown);
+				$cfg->set("time", $time);
+				$this->getServer()->dispatchCommand(new ConsoleCommandSender(), $Rewards);
+			} else {
+				$sender->sendMessage($this->already_claimed);
+			}
+		}
     }
 }
