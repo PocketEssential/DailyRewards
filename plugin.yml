@@ -1,7 +1,7 @@
 name: DailyRewards
 main: PocketEssential\DailyRewards\Main
 version: 1.0.0
-api: 1.0.0
+api: 3.0.0
 description: Give player rewards daily!
 
 
